@@ -32,14 +32,13 @@ mixin PageRouteReportMixin<T> on Route<T> {
   }
 }
 
-class GetPageRoute<T> extends PageRoute<T>
-    with GetPageRouteTransitionMixin<T>, PageRouteReportMixin {
+class GetPageRoute<T> extends PageRoute<T> with GetPageRouteTransitionMixin<T>, PageRouteReportMixin {
   /// Creates a page route for use in an iOS designed app.
   ///
   /// The [builder], [maintainState], and [fullscreenDialog] arguments must not
   /// be null.
   GetPageRoute({
-    RouteSettings? settings,
+    super.settings,
     this.transitionDuration = const Duration(milliseconds: 300),
     this.reverseTransitionDuration = const Duration(milliseconds: 300),
     this.opaque = true,
@@ -61,13 +60,11 @@ class GetPageRoute<T> extends PageRoute<T>
     this.showCupertinoParallax = true,
     this.barrierLabel,
     this.maintainState = true,
-    bool fullscreenDialog = false,
+    super.fullscreenDialog,
     this.middlewares,
-  })  : bindings = (binding == null) ? bindings : [...bindings, binding],
-        super(
-          settings: settings,
-          fullscreenDialog: fullscreenDialog,
-        );
+    this.limitedSwipe,
+    this.initialOffset,
+  }) : bindings = (binding == null) ? bindings : [...bindings, binding];
 
   @override
   final Duration transitionDuration;
@@ -87,7 +84,14 @@ class GetPageRoute<T> extends PageRoute<T>
 
   @override
   final bool opaque;
+  /// 是否添加滑动返回手势
   final bool? popGesture;
+
+  /// 是否限制滑动手势的触发距离, 默认为 false 全屏手势
+  final bool? limitedSwipe;
+
+  /// 滑动手势的初始偏移, [limitedSwipe] 为 true 时生效, 默认为 0
+  final double? initialOffset;
 
   @override
   final bool barrierDismissible;
@@ -121,8 +125,7 @@ class GetPageRoute<T> extends PageRoute<T>
 
     final localBinds = [if (binds != null) ...binds!];
 
-    final bindingsToBind = middlewareRunner
-        .runOnBindingsStart(bindings.isNotEmpty ? bindings : localBinds);
+    final bindingsToBind = middlewareRunner.runOnBindingsStart(bindings.isNotEmpty ? bindings : localBinds);
 
     final pageToBuild = middlewareRunner.runOnPageBuildStart(page)!;
 
@@ -159,6 +162,7 @@ class GetPageRoute<T> extends PageRoute<T>
   @override
   String get debugLabel => '${super.debugLabel}(${settings.name})';
 
+  /// 手势的宽度, [limitedSwipe] 为 true 时生效, 默认为 [MediaQueryData.padding] 的 [left] 或 [right]
   @override
   final double Function(BuildContext context)? gestureWidth;
 }

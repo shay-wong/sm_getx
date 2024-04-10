@@ -120,6 +120,7 @@ class GetMiddleware implements _RouteMiddleware {
   @override
   void onPageDispose() {}
 
+  /// 如果返回 null, 则不会重定向, 和直接返回 route 结果是一样的
   @override
   FutureOr<RouteDecoder?> redirectDelegate(RouteDecoder route) => (route);
 }

@@ -584,6 +584,8 @@ extension GetNavigationExt on GetInterface {
     String page, {
     dynamic arguments,
     dynamic id,
+    @Deprecated(
+        'preventDuplicates 已被已用, 相关代码被注释掉了, 重复路由的相关逻辑处理放到了 preventDuplicateHandlingMode 中, 请使用 preventDuplicateHandlingMode 来处理')
     bool preventDuplicates = true,
     Map<String, String>? parameters,
   }) {
@@ -1120,6 +1122,7 @@ extension GetNavigationExt on GetInterface {
 
   Future<void> updateLocale(Locale l) async {
     Get.locale = l;
+    // 强制整个应用的 Widget 树进行重建
     await forceAppUpdate();
   }
 
@@ -1136,6 +1139,20 @@ extension GetNavigationExt on GetInterface {
   /// reconstruct the application from the sketch, use this with caution.
   /// Your entire application will be rebuilt, and touch events will not
   /// work until the end of rendering.
+  /// 通常情况下，Flutter 能够智能的知道要更新哪个部件，因此很少需要这条命令。
+  /// 它通过对 Widget 树的有效管理和 setState 方法的调用来实现这一点。
+  /// 因此，在绝大多数情况下，开发者不需要手动介入 Widget 的更新过程。
+  /// 如果在 Widget 构建过程中使用了 const 关键字，该 Widget 及其子树将不会在 setState 调用时更新。
+  /// 这是因为 const 创建的是编译时常量，Flutter 认为它们在整个应用生命周期内不会改变。
+  /// 在一些特殊场景下，尽管 Widget 被定义为 const，但仍然需要强制更新。
+  /// 一个典型的例子是应用语言更改时。
+  /// 虽然可以通过使 Widget 变"脏" (dirty) 来强制重建 (performRebuild)，但在某些情况下，这可能不是可行的或者开发者不希望这样做。
+  /// 在 Flutter 不愿意更新 Widget，而开发者又确实需要更新时，可以使用 reassemble 方法强制整个应用的 Widget 树进行重建。
+  /// 这相当于从头开始重构应用的 UI。
+  /// ! 注意，调用 reassemble 会导致整个应用重新构建，这是一个非常重的操作。
+  /// ! 在渲染完成之前，触摸事件等可能无法正常工作。因此，除非确有必要，否则应避免使用此方法。
+  /// * 虽然很少需要，但在全局事件（如主题更改、语言更改等）需要更新大部分或全部 UI 时，使用 reassemble 可以是一个解决方案。
+  /// ! 应谨慎使用，并评估是否有更优的解决方案。
   Future<void> forceAppUpdate() async {
     await engine.performReassemble();
   }
@@ -1158,6 +1175,7 @@ extension GetNavigationExt on GetInterface {
     return rootController.nestedKey(key);
   }
 
+  /// 根据 key 获取 [GetDelegate]
   GetDelegate searchDelegate(String? k) {
     GetDelegate key;
     if (k == null) {
@@ -1301,6 +1319,7 @@ extension GetNavigationExt on GetInterface {
 
   Map<String, GetDelegate> get keys => rootController.keys;
 
+  /// [GetRoot] 控制器
   GetRootState get rootController => GetRootState.controller;
 
   ConfigData get _getxController => GetRootState.controller.config;

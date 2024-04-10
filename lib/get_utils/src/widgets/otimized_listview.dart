@@ -12,7 +12,7 @@ class OtimizedListView<T> extends StatelessWidget {
   final int length;
   final Widget Function(BuildContext context, ValueKey key, T item) builder;
   const OtimizedListView({
-    Key? key,
+    super.key,
     required this.list,
     required this.builder,
     this.scrollDirection = Axis.vertical,
@@ -22,8 +22,7 @@ class OtimizedListView<T> extends StatelessWidget {
     this.physics,
     this.onEmpty = const SizedBox.shrink(),
     this.shrinkWrap = false,
-  })  : length = list.length,
-        super(key: key);
+  }) : length = list.length;
   @override
   Widget build(BuildContext context) {
     if (list.isEmpty) return onEmpty;

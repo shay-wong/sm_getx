@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../get.dart';
 
-class RouterOutlet<TDelegate extends RouterDelegate<T>, T extends Object>
-    extends StatefulWidget {
+class RouterOutlet<TDelegate extends RouterDelegate<T>, T extends Object> extends StatefulWidget {
   final TDelegate routerDelegate;
   final Widget Function(BuildContext context) builder;
 
@@ -26,8 +25,7 @@ class RouterOutlet<TDelegate extends RouterDelegate<T>, T extends Object>
             builder: (context) {
               final currentConfig = context.delegate.currentConfiguration as T?;
               final rDelegate = context.delegate as TDelegate;
-              var picked =
-                  currentConfig == null ? null : pickPages(currentConfig);
+              var picked = currentConfig == null ? null : pickPages(currentConfig);
               if (picked?.isEmpty ?? true) {
                 picked = null;
               }
@@ -36,8 +34,7 @@ class RouterOutlet<TDelegate extends RouterDelegate<T>, T extends Object>
             delegate: delegate,
             key: key);
   @override
-  RouterOutletState<TDelegate, T> createState() =>
-      RouterOutletState<TDelegate, T>();
+  RouterOutletState<TDelegate, T> createState() => RouterOutletState<TDelegate, T>();
 }
 
 class RouterOutletState<TDelegate extends RouterDelegate<T>, T extends Object>
@@ -60,8 +57,7 @@ class RouterOutletState<TDelegate extends RouterDelegate<T>, T extends Object>
     delegate?.addListener(_listener);
     disposer = () => delegate?.removeListener(_listener);
 
-    _backButtonDispatcher =
-        router.backButtonDispatcher!.createChildBackButtonDispatcher();
+    _backButtonDispatcher = router.backButtonDispatcher!.createChildBackButtonDispatcher();
   }
 
   @override
@@ -93,10 +89,7 @@ class GetRouterOutlet extends RouterOutlet<GetDelegate, RouteDecoder> {
               // jump the ancestor path
               final length = Uri.parse(initialRoute).pathSegments.length;
 
-              return config.currentTreeBranch
-                  .skip(length)
-                  .take(length)
-                  .toList();
+              return config.currentTreeBranch.skip(length).take(length).toList();
             }
             ret = config.currentTreeBranch.pickAfterRoute(anchorRoute);
             if (filterPages != null) {
@@ -105,8 +98,7 @@ class GetRouterOutlet extends RouterOutlet<GetDelegate, RouteDecoder> {
             return ret;
           },
           key: key,
-          emptyPage: (delegate) =>
-              delegate.matchRoute(initialRoute).route ?? delegate.notFoundRoute,
+          emptyPage: (delegate) => delegate.matchRoute(initialRoute).route ?? delegate.notFoundRoute,
           navigatorKey: Get.nestedKey(anchorRoute)?.navigatorKey,
           delegate: delegate,
         );
@@ -114,7 +106,7 @@ class GetRouterOutlet extends RouterOutlet<GetDelegate, RouteDecoder> {
     super.key,
     Widget Function(GetDelegate delegate)? emptyWidget,
     GetPage Function(GetDelegate delegate)? emptyPage,
-    required Iterable<GetPage> Function(RouteDecoder currentNavStack) pickPages,
+    required super.pickPages,
     bool Function(Route<dynamic>, dynamic)? onPopPage,
     String? restorationScopeId,
     GlobalKey<NavigatorState>? navigatorKey,
@@ -128,8 +120,7 @@ class GetRouterOutlet extends RouterOutlet<GetDelegate, RouteDecoder> {
 
             if (pageRes.isNotEmpty) {
               return InheritedNavigator(
-                navigatorKey: navigatorKey ??
-                    Get.rootController.rootDelegate.navigatorKey,
+                navigatorKey: navigatorKey ?? Get.rootController.rootDelegate.navigatorKey,
                 child: GetNavigator(
                   restorationScopeId: restorationScopeId,
                   onPopPage: onPopPage ??
@@ -147,23 +138,16 @@ class GetRouterOutlet extends RouterOutlet<GetDelegate, RouteDecoder> {
             }
             return (emptyWidget?.call(rDelegate) ?? const SizedBox.shrink());
           },
-          pickPages: pickPages,
           delegate: delegate ?? Get.rootController.rootDelegate,
         );
 
   GetRouterOutlet.builder({
     super.key,
-    required Widget Function(
-      BuildContext context,
-    ) builder,
+    required super.builder,
     String? route,
     GetDelegate? routerDelegate,
   }) : super.builder(
-          builder: builder,
-          delegate: routerDelegate ??
-              (route != null
-                  ? Get.nestedKey(route)
-                  : Get.rootController.rootDelegate),
+          delegate: routerDelegate ?? (route != null ? Get.nestedKey(route) : Get.rootController.rootDelegate),
         );
 }
 
@@ -193,48 +177,59 @@ extension NavKeyExt on BuildContext {
 
 extension PagesListExt on List<GetPage> {
   /// Returns the route and all following routes after the given route.
+  /// 返回路由栈中传入的 [route] 以及该 [route] 之后的所有后续路由。
   Iterable<GetPage> pickFromRoute(String route) {
     return skipWhile((value) => value.name != route);
   }
 
   /// Returns the routes after the given route.
+  /// 返回路由栈中传入的 [route] 之后的路由。
   Iterable<GetPage> pickAfterRoute(String route) {
     // If the provided route is root, we take the first route after root.
+    // 如果传入的路由是根路由，我们取根路由之后的第一个路由。
     if (route == '/') {
       return pickFromRoute(route).skip(1).take(1);
     }
     // Otherwise, we skip the route and take all routes after it.
+    // 否则，我们跳过传入的路由，取传入的路由之后的所有路由。
     return pickFromRoute(route).skip(1);
   }
 }
 
-typedef NavigatorItemBuilderBuilder = Widget Function(
-    BuildContext context, List<String> routes, int index);
+typedef NavigatorItemBuilderBuilder = Widget Function(BuildContext context, List<String> routes, int index);
 
+/// 这个类接受一个路由列表和一个构建方法，基于当前路由返回对应的 [Widget]。
 class IndexedRouteBuilder<T> extends StatelessWidget {
   const IndexedRouteBuilder({
-    Key? key,
+    super.key,
     required this.builder,
     required this.routes,
-  }) : super(key: key);
+  });
+
+  /// 路由列表，每个元素是一个字符串，代表应用中的一个路由。
   final List<String> routes;
+
+  /// 构建函数类型定义，接受当前上下文 [BuildContext]、路由列表 [routes] 和当前路由的索引 [index]，返回一个 [Widget]。
   final NavigatorItemBuilderBuilder builder;
 
-// Method to get the current index based on the route
+  // Method to get the current index based on the route
+  /// 根据当前的路由 [currentLocation]（即页面位置）来确定其在路由列表中的索引。
+  /// 如果当前路由与列表中某个路由匹配，返回该路由的索引；否则，默认返回 0。
   int _getCurrentIndex(String currentLocation) {
     for (int i = 0; i < routes.length; i++) {
       if (currentLocation.startsWith(routes[i])) {
-        return i;
+        return i; // 如果找到匹配的路由，返回其索引。
       }
     }
-    return 0; // default index
+    return 0; // default index, 如果没有找到匹配的路由，默认返回索引 0。
   }
 
   @override
   Widget build(BuildContext context) {
-    final location = context.location;
-    final index = _getCurrentIndex(location);
+    final location = context.location; // 获取当前的路由位置（即页面的路径）。
+    final index = _getCurrentIndex(location); // 使用当前路由位置，确定其在路由列表中的索引。
 
+    // 调用构建函数，传入当前上下文、路由列表和当前路由的索引，返回对应的widget。
     return builder(context, routes, index);
   }
 }
@@ -269,12 +264,11 @@ mixin RouterListenerMixin<T extends StatefulWidget> on State<T> {
 class RouterListenerInherited extends InheritedWidget {
   const RouterListenerInherited({
     super.key,
-    required Widget child,
-  }) : super(child: child);
+    required super.child,
+  });
 
   static RouterListenerInherited? of(BuildContext context) {
-    return context
-        .dependOnInheritedWidgetOfExactType<RouterListenerInherited>();
+    return context.dependOnInheritedWidgetOfExactType<RouterListenerInherited>();
   }
 
   @override
@@ -285,17 +279,16 @@ class RouterListenerInherited extends InheritedWidget {
 
 class RouterListener extends StatefulWidget {
   const RouterListener({
-    Key? key,
+    super.key,
     required this.builder,
-  }) : super(key: key);
+  });
   final WidgetBuilder builder;
 
   @override
   State<RouterListener> createState() => RouteListenerState();
 }
 
-class RouteListenerState extends State<RouterListener>
-    with RouterListenerMixin {
+class RouteListenerState extends State<RouterListener> with RouterListenerMixin {
   @override
   Widget build(BuildContext context) {
     return RouterListenerInherited(child: Builder(builder: widget.builder));
@@ -303,23 +296,21 @@ class RouteListenerState extends State<RouterListener>
 }
 
 class BackButtonCallback extends StatefulWidget {
-  const BackButtonCallback({Key? key, required this.builder}) : super(key: key);
+  const BackButtonCallback({super.key, required this.builder});
   final WidgetBuilder builder;
 
   @override
   State<BackButtonCallback> createState() => RouterListenerState();
 }
 
-class RouterListenerState extends State<BackButtonCallback>
-    with RouterListenerMixin {
+class RouterListenerState extends State<BackButtonCallback> with RouterListenerMixin {
   late ChildBackButtonDispatcher backButtonDispatcher;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final router = Router.of(context);
-    backButtonDispatcher =
-        router.backButtonDispatcher!.createChildBackButtonDispatcher();
+    backButtonDispatcher = router.backButtonDispatcher!.createChildBackButtonDispatcher();
   }
 
   @override

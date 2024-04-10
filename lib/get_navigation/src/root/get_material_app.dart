@@ -58,29 +58,33 @@ class GetMaterialApp extends StatelessWidget {
   final List<Bind> binds;
   final Duration? transitionDuration;
   final bool? defaultGlobalState;
+
+  /// 一般是 app_pages.dart 中的 [routes],
+  /// 如果没有设置 [getPages], 则默认设置一个 [GetPage], 默认设置的 [GetPage] 的就是传入的 [home].
   final List<GetPage>? getPages;
   final GetPage? unknownRoute;
   final RouteInformationProvider? routeInformationProvider;
   final RouteInformationParser<Object>? routeInformationParser;
+
+  /// 自定义的导航代理, 用于替换系统 和 Get 的导航代理,
+  /// 但是如果要使用 [Get.rootController.rootDelegate], 推荐继承 [GetDelegate]
   final RouterDelegate<Object>? routerDelegate;
   final RouterConfig<Object>? routerConfig;
   final BackButtonDispatcher? backButtonDispatcher;
   final bool useInheritedMediaQuery;
 
   const GetMaterialApp({
-    Key? key,
+    super.key,
     this.navigatorKey,
     this.scaffoldMessengerKey,
     this.home,
-    Map<String, Widget Function(BuildContext)> this.routes =
-        const <String, WidgetBuilder>{},
+    Map<String, Widget Function(BuildContext)> this.routes = const <String, WidgetBuilder>{},
     this.initialRoute,
     this.onGenerateRoute,
     this.onGenerateInitialRoutes,
     this.onUnknownRoute,
     this.useInheritedMediaQuery = false,
-    List<NavigatorObserver> this.navigatorObservers =
-        const <NavigatorObserver>[],
+    List<NavigatorObserver> this.navigatorObservers = const <NavigatorObserver>[],
     this.builder,
     this.textDirection,
     this.title = '',
@@ -128,11 +132,10 @@ class GetMaterialApp extends StatelessWidget {
         backButtonDispatcher = null,
         routeInformationParser = null,
         routerDelegate = null,
-        routerConfig = null,
-        super(key: key);
+        routerConfig = null;
 
   const GetMaterialApp.router({
-    Key? key,
+    super.key,
     this.routeInformationProvider,
     this.scaffoldMessengerKey,
     this.routeInformationParser,
@@ -190,12 +193,13 @@ class GetMaterialApp extends StatelessWidget {
         onGenerateInitialRoutes = null,
         onUnknownRoute = null,
         routes = null,
-        initialRoute = null,
-        super(key: key);
+        initialRoute = null;
 
   @override
   Widget build(BuildContext context) {
+    // 创建 GetRoot
     return GetRoot(
+      // 相关配置
       config: ConfigData(
         backButtonDispatcher: backButtonDispatcher,
         binds: binds,
@@ -241,48 +245,46 @@ class GetMaterialApp extends StatelessWidget {
       //   ),
       //   ...binds,
       // ],
-      child: Builder(builder: (context) {
-        final controller = GetRoot.of(context);
-        return MaterialApp.router(
-          routerDelegate: controller.config.routerDelegate,
-          routeInformationParser: controller.config.routeInformationParser,
-          backButtonDispatcher: backButtonDispatcher,
-          routeInformationProvider: routeInformationProvider,
-          routerConfig: routerConfig,
-          key: controller.config.unikey,
-          builder: (context, child) => Directionality(
-            textDirection: textDirection ??
-                (rtlLanguages.contains(Get.locale?.languageCode)
-                    ? TextDirection.rtl
-                    : TextDirection.ltr),
-            child: builder == null
-                ? (child ?? const Material())
-                : builder!(context, child ?? const Material()),
-          ),
-          title: title,
-          onGenerateTitle: onGenerateTitle,
-          color: color,
-          theme: controller.config.theme ?? ThemeData.fallback(),
-          darkTheme: controller.config.darkTheme ??
-              controller.config.theme ??
-              ThemeData.fallback(),
-          themeMode: controller.config.themeMode,
-          locale: Get.locale ?? locale,
-          scaffoldMessengerKey: controller.config.scaffoldMessengerKey,
-          localizationsDelegates: localizationsDelegates,
-          localeListResolutionCallback: localeListResolutionCallback,
-          localeResolutionCallback: localeResolutionCallback,
-          supportedLocales: supportedLocales,
-          debugShowMaterialGrid: debugShowMaterialGrid,
-          showPerformanceOverlay: showPerformanceOverlay,
-          checkerboardRasterCacheImages: checkerboardRasterCacheImages,
-          checkerboardOffscreenLayers: checkerboardOffscreenLayers,
-          showSemanticsDebugger: showSemanticsDebugger,
-          debugShowCheckedModeBanner: debugShowCheckedModeBanner,
-          shortcuts: shortcuts,
-          scrollBehavior: scrollBehavior,
-        );
-      }),
+      child: Builder(
+        builder: (context) {
+          // 获取 [GetRoot]
+          final controller = GetRoot.of(context);
+          // 创建 MaterialApp
+          return MaterialApp.router(
+            routerDelegate: controller.config.routerDelegate,
+            routeInformationParser: controller.config.routeInformationParser,
+            backButtonDispatcher: backButtonDispatcher,
+            routeInformationProvider: routeInformationProvider,
+            routerConfig: routerConfig,
+            key: controller.config.unikey,
+            builder: (context, child) => Directionality(
+              textDirection: textDirection ??
+                  (rtlLanguages.contains(Get.locale?.languageCode) ? TextDirection.rtl : TextDirection.ltr),
+              child: builder == null ? (child ?? const Material()) : builder!(context, child ?? const Material()),
+            ),
+            title: title,
+            onGenerateTitle: onGenerateTitle,
+            color: color,
+            theme: controller.config.theme ?? ThemeData.fallback(),
+            darkTheme: controller.config.darkTheme ?? controller.config.theme ?? ThemeData.fallback(),
+            themeMode: controller.config.themeMode,
+            locale: Get.locale ?? locale,
+            scaffoldMessengerKey: controller.config.scaffoldMessengerKey,
+            localizationsDelegates: localizationsDelegates,
+            localeListResolutionCallback: localeListResolutionCallback,
+            localeResolutionCallback: localeResolutionCallback,
+            supportedLocales: supportedLocales,
+            debugShowMaterialGrid: debugShowMaterialGrid,
+            showPerformanceOverlay: showPerformanceOverlay,
+            checkerboardRasterCacheImages: checkerboardRasterCacheImages,
+            checkerboardOffscreenLayers: checkerboardOffscreenLayers,
+            showSemanticsDebugger: showSemanticsDebugger,
+            debugShowCheckedModeBanner: debugShowCheckedModeBanner,
+            shortcuts: shortcuts,
+            scrollBehavior: scrollBehavior,
+          );
+        },
+      ),
     );
   }
 }

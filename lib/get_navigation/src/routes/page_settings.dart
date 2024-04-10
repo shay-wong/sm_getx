@@ -48,12 +48,15 @@ extension PageArgExt on BuildContext {
   }
 }
 
+/// 存储了 [GetPage] 的一些信息
 class PageSettings extends RouteSettings {
   PageSettings(
     this.uri, [
+    /// 传递给此路由的参数。
     Object? arguments,
   ]) : super(arguments: arguments);
 
+  /// 路由字符串, 即 app_routes.dart 中的 name
   @override
   String get name => '$uri';
 
@@ -86,9 +89,7 @@ class PageSettings extends RouteSettings {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is PageSettings &&
-        other.uri == uri &&
-        other.arguments == arguments;
+    return other is PageSettings && other.uri == uri && other.arguments == arguments;
   }
 
   @override

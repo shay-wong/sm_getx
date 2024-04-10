@@ -50,6 +50,7 @@ extension Inst on GetInterface {
 
   /// Holds references to every registered Instance when using
   /// `Get.put()`
+  /// 使用 'Get.put()'时，保存对每个注册实例的引用
   static final Map<String, _InstanceBuilderFactory> _singl = {};
 
   /// Holds a reference to every registered callback when using
@@ -76,10 +77,11 @@ extension Inst on GetInterface {
     bool permanent = false,
   }) {
     _insert(
-        isSingleton: true,
-        name: tag,
-        permanent: permanent,
-        builder: (() => dependency));
+      isSingleton: true,
+      name: tag,
+      permanent: permanent,
+      builder: (() => dependency),
+    );
     return find<S>(tag: tag);
   }
 
@@ -105,6 +107,7 @@ extension Inst on GetInterface {
   ///
   /// Subsequent calls to `Get.lazyPut()` with the same parameters
   /// (<[S]> and optionally [tag] will **not** override the original).
+  /// ? [fenix] 是否需要重新创建实例
   void lazyPut<S>(
     InstanceBuilderCallback<S> builder, {
     String? tag,
@@ -150,6 +153,8 @@ extension Inst on GetInterface {
   }
 
   /// Injects the Instance [S] builder into the `_singleton` HashMap.
+  /// 将实例构建器注入到 [_singl] HashMap
+  /// [builder] 里通常就是 [Controller] 的初始化方法
   void _insert<S>({
     bool? isSingleton,
     String? name,
@@ -157,17 +162,22 @@ extension Inst on GetInterface {
     required InstanceBuilderCallback<S> builder,
     bool fenix = false,
   }) {
+    // 根据类型和 tag 生成 key
     final key = _getKey(S, name);
 
     _InstanceBuilderFactory<S>? dep;
+    // 判断 [_singl] 中是否存在该 key
     if (_singl.containsKey(key)) {
       final newDep = _singl[key];
+      // 判断该 key 对应的实例是否为脏实例
       if (newDep == null || !newDep.isDirty) {
         return;
       } else {
+        // 如果是脏实例则将其移除
         dep = newDep as _InstanceBuilderFactory<S>;
       }
     }
+    // 生成新的实例, 并将其注册到 [_singl] 中
     _singl[key] = _InstanceBuilderFactory<S>(
       isSingleton: isSingleton,
       builderFunc: builder,
@@ -175,7 +185,7 @@ extension Inst on GetInterface {
       isInit: false,
       fenix: fenix,
       tag: name,
-      lateRemove: dep,
+      lateRemove: dep, // ? 如果存在 dep 则会在稍后被移除
     );
   }
 
@@ -188,21 +198,33 @@ extension Inst on GetInterface {
   /// (not for Singletons access).
   /// Returns the instance if not initialized, required for Get.create() to
   /// work properly.
+  /// 初始化类实例 [S]（或 [tag]）的依赖项，
+  /// 如果它是控制器 [GetLifeCycleMixin]，则启动生命周期进程.
+  /// 如果 `Get.smartManagement` 标记为 [SmartManagement.full] 或 [SmartManagement.keepFactory],
+  /// 则可选择将当前路由与实例的生命周期关联。
+  /// 如果使用 `Get.create()` 创建，则仅标记 `isInit`（不适用于单例访问）.
+  /// 如果未初始化，则返回 Get.create() 所必需的实例。
   S? _initDependencies<S>({String? name}) {
+    // 根据类型和 tag 生成 key
     final key = _getKey(S, name);
+    // 因为前面 [find] 已经判断过 _singl 中是否存在该 key
+    // 所以这里不需要再判断, 直接从 [_singl] 中取值即可
     final isInit = _singl[key]!.isInit;
     S? i;
     if (!isInit) {
+      // 如果未初始化过, 判断是否是单例
       final isSingleton = _singl[key]?.isSingleton ?? false;
       if (isSingleton) {
+        // 如果是单例则将其设置为已初始化
         _singl[key]!.isInit = true;
       }
+      // 得到调用 [getDependency] 以获取的实例
       i = _startController<S>(tag: name);
 
       if (isSingleton) {
         if (Get.smartManagement != SmartManagement.onlyBuilder) {
-          RouterReportManager.instance
-              .reportDependencyLinkedToRoute(_getKey(S, name));
+          // 如果是单例且不是 [onlyBuilder] 的模式, 将实例绑定到当前路由
+          RouterReportManager.instance.reportDependencyLinkedToRoute(_getKey(S, name));
         }
       }
     }
@@ -243,9 +265,13 @@ extension Inst on GetInterface {
   }
 
   /// Initializes the controller
+  /// 初始化控制器
   S _startController<S>({String? tag}) {
+    // 根据类型和 tag 生成 key
     final key = _getKey(S, tag);
+    // 调用 [getDependency] 以获取对应的实例
     final i = _singl[key]!.getDependency() as S;
+    // 如果是 [GetLifeCycleMixin] 类型, 则调用其 [onStart] 方法, 开始生命周期回调.
     if (i is GetLifeCycleMixin) {
       i.onStart();
       if (tag == null) {
@@ -254,6 +280,7 @@ extension Inst on GetInterface {
         Get.log('Instance "$S" with tag "$tag" has been initialized');
       }
       if (!_singl[key]!.isSingleton!) {
+        // 如果不是单例, 保存实例的 onClose() 引用
         RouterReportManager.instance.appendRouteByCreate(i);
       }
     }
@@ -275,10 +302,18 @@ extension Inst on GetInterface {
   /// it will create an instance each time you call [find].
   /// If the registered type <[S]> (or [tag]) is a Controller,
   /// it will initialize it's lifecycle.
+  /// 查找已注册的类型 <[S]> (或 [tag])
+  /// 如果使用 Get.[create] 注册类型 <[S]> 或 [tag],
+  /// 每次调用 [find] 时，它都会创建一个实例.
+  /// 如果已注册的类型 <[S]> (或 [tag]) 是控制器，它将初始化其生命周期。
   S find<S>({String? tag}) {
+    // 根据类型和 tag 生成唯一 key
     final key = _getKey(S, tag);
+    // 如果已经注册过
     if (isRegistered<S>(tag: tag)) {
+      // 取出对应的实例
       final dep = _singl[key];
+      // 如果实例为空, 抛出异常
       if (dep == null) {
         if (tag == null) {
           throw 'Class "$S" is not registered';
@@ -290,9 +325,12 @@ extension Inst on GetInterface {
       /// although dirty solution, the lifecycle starts inside
       /// `initDependencies`, so we have to return the instance from there
       /// to make it compatible with `Get.create()`.
+      /// 虽然是 dirty 的解决方案，但生命周期是在  `initDependencies` 内部开始的,
+      /// 因此我们必须从那里返回实例，以便使其与 `Get.create()` 兼容.
       final i = _initDependencies<S>(name: tag);
       return i ?? dep.getDependency() as S;
     } else {
+      // 如果没有注册过, 抛出异常
       // ignore: lines_longer_than_80_chars
       throw '"$S" not found. You need to call "Get.put($S())" or "Get.lazyPut(()=>$S())"';
     }
@@ -300,6 +338,8 @@ extension Inst on GetInterface {
 
   /// The findOrNull method will return the instance if it is registered;
   /// otherwise, it will return null.
+  /// 如果已注册，则 [findOrNull] 方法将返回该实例;
+  /// 否则，它将返回 null.
   S? findOrNull<S>({String? tag}) {
     if (isRegistered<S>(tag: tag)) {
       return find<S>(tag: tag);
@@ -324,8 +364,7 @@ extension Inst on GetInterface {
   ///
   ///  Note: if fenix is not provided it will be set to true if
   /// the parent instance was permanent
-  void lazyReplace<P>(InstanceBuilderCallback<P> builder,
-      {String? tag, bool? fenix}) {
+  void lazyReplace<P>(InstanceBuilderCallback<P> builder, {String? tag, bool? fenix}) {
     final info = getInstanceInfo<P>(tag: tag);
     final permanent = (info.isPermanent ?? false);
     delete<P>(tag: tag, force: permanent);
@@ -334,6 +373,7 @@ extension Inst on GetInterface {
 
   /// Generates the key based on [type] (and optionally a [name])
   /// to register an Instance Builder in the hashmap.
+  /// 基于 [type] (以及可选的 [name]) 生成唯一 [key]，以便在 [_singl] HashMap 中注册实例构建器。
   String _getKey(Type type, String? name) {
     return name == null ? type.toString() : type.toString() + name;
   }
@@ -510,13 +550,18 @@ class _InstanceBuilderFactory<S> {
 
   /// When fenix mode is available, when a new instance is need
   /// Instance manager will recreate a new instance of S
+  /// 当 [fenix]=true 时，每当需要新实例时，实例管理器将重新创建 [S] 的新实例.
   bool fenix;
 
   /// Stores the actual object instance when [isSingleton]=true.
+  /// [isSingleton]=true 时, 用来存储实际对象实例。
   S? dependency;
 
   /// Generates (and regenerates) the instance when [isSingleton]=false.
   /// Usually used by factory methods
+  /// 当 [isSingleton]=false 时生成（或重新生成）实例.
+  /// 通常用于工厂方法
+  /// 这里保存的通常就是 Controller 的初始化方法
   InstanceBuilderCallback<S> builderFunc;
 
   /// Flag to persist the instance in memory,
@@ -550,14 +595,17 @@ class _InstanceBuilderFactory<S> {
   }
 
   /// Gets the actual instance by it's [builderFunc] or the persisted instance.
+  /// 通过 [builderFunc] 或持久化实例获取实际的实例.
   S getDependency() {
     if (isSingleton!) {
       if (dependency == null) {
+        // 如果是单例，且 [dependency] 为空，则调用 [builderFunc] 重新生成一个实例
         _showInitLog();
         dependency = builderFunc();
       }
       return dependency!;
     } else {
+      // 如果不是单例，则调用 [builderFunc] 生成一个实例
       return builderFunc();
     }
   }

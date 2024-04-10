@@ -7,19 +7,16 @@ import '../../../get_instance/src/bindings_interface.dart';
 import '../../../get_utils/src/platform/platform.dart';
 import '../../../route_manager.dart';
 
+/// 导航代理, 用来处理导航相关的逻辑
 class GetDelegate extends RouterDelegate<RouteDecoder>
-    with
-        ChangeNotifier,
-        PopNavigatorRouterDelegateMixin<RouteDecoder>,
-        IGetNavigation {
+    with ChangeNotifier, PopNavigatorRouterDelegateMixin<RouteDecoder>, IGetNavigation {
   factory GetDelegate.createDelegate({
     GetPage<dynamic>? notFoundRoute,
     List<GetPage> pages = const [],
     List<NavigatorObserver>? navigatorObservers,
     TransitionDelegate<dynamic>? transitionDelegate,
     PopMode backButtonPopMode = PopMode.history,
-    PreventDuplicateHandlingMode preventDuplicateHandlingMode =
-        PreventDuplicateHandlingMode.reorderRoutes,
+    PreventDuplicateHandlingMode preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
     GlobalKey<NavigatorState>? navigatorKey,
   }) {
     return GetDelegate(
@@ -33,6 +30,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     );
   }
 
+  /// 记录当前 push 的路由栈, 当 push 的时候会在栈顶添加
   final List<RouteDecoder> _activePages = <RouteDecoder>[];
   final PopMode backButtonPopMode;
   final PreventDuplicateHandlingMode preventDuplicateHandlingMode;
@@ -42,37 +40,44 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   final List<NavigatorObserver>? navigatorObservers;
   final TransitionDelegate<dynamic>? transitionDelegate;
 
-  final Iterable<GetPage> Function(RouteDecoder currentNavStack)?
-      pickPagesForRootNavigator;
+  final Iterable<GetPage> Function(RouteDecoder currentNavStack)? pickPagesForRootNavigator;
 
   List<RouteDecoder> get activePages => _activePages;
 
+  /// 路由树, 即传入的 pages, [GetDelegate] 初始化的时候会调用 [addPages] 存储所有的路由
   final _routeTree = ParseRouteTree(routes: []);
 
+  /// 已注册的路由
   List<GetPage> get registeredRoutes => _routeTree.routes;
 
+  /// 添加路由
   void addPages(List<GetPage> getPages) {
     _routeTree.addRoutes(getPages);
   }
 
+  /// 清除所有路由
   void clearRouteTree() {
     _routeTree.routes.clear();
   }
 
+  /// 添加单个路由
   void addPage(GetPage getPage) {
     _routeTree.addRoute(getPage);
   }
 
+  /// 移除单个路由
   void removePage(GetPage getPage) {
     _routeTree.removeRoute(getPage);
   }
 
+  /// 匹配路由
   RouteDecoder matchRoute(String name, {PageSettings? arguments}) {
     return _routeTree.matchRoute(name, arguments: arguments);
   }
 
   // GlobalKey<NavigatorState> get navigatorKey => Get.key;
 
+  /// 全局的 Navigator Key, 用来访问 Navigator 控制导航
   @override
   GlobalKey<NavigatorState> navigatorKey;
 
@@ -83,8 +88,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     this.navigatorObservers,
     this.transitionDelegate,
     this.backButtonPopMode = PopMode.history,
-    this.preventDuplicateHandlingMode =
-        PreventDuplicateHandlingMode.reorderRoutes,
+    this.preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
     this.pickPagesForRootNavigator,
     this.restorationScopeId,
     bool showHashOnUrl = false,
@@ -104,26 +108,36 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   }
 
   Future<RouteDecoder?> runMiddleware(RouteDecoder config) async {
+    // 获取 [GetPage] 中的 [middlewares] 列表
     final middlewares = config.currentTreeBranch.last.middlewares;
     if (middlewares.isEmpty) {
+      // 如果没有中间件, 则不重定向, 直接返回传入的 [RouteDecoder], 即将要显示界面
       return config;
     }
     var iterator = config;
+    // 正序遍历中间件, 所有 [GetPage] 里前面的中间件会先执行
     for (var item in middlewares) {
+      // 执行 redirectDelegate 函数
       var redirectRes = await item.redirectDelegate(iterator);
+      // 返回 null 和上面返回 config 结果是一样的, 都是不重定向
       if (redirectRes == null) return null;
+      // 如果 redirectRes 不为空则覆盖 iterator
       iterator = redirectRes;
       // Stop the iteration over the middleware if we changed page
       // and that redirectRes is not the same as the current config.
+      // 如果 redirectDelegate 中返回的不是传入的 config, 则结束迭代
+      // 当其中某一个中间件进行了重定向, 则后面所有的中间件都不会再执行
       if (config != redirectRes) {
         break;
       }
     }
     // If the target is not the same as the source, we need
     // to run the middlewares for the new route.
+    // 如果进行了重定向，则会递归调用 runMiddleware，运行重定向后新路由的所有中间件。
     if (iterator != config) {
       return await runMiddleware(iterator);
     }
+    // 返回重定向后最终的 [RouteDecoder]
     return iterator;
   }
 
@@ -168,8 +182,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
 
   Future<void> _pushHistory(RouteDecoder config) async {
     if (config.route!.preventDuplicates) {
-      final originalEntryIndex = _activePages.indexWhere(
-          (element) => element.pageSettings?.name == config.pageSettings?.name);
+      final originalEntryIndex =
+          _activePages.indexWhere((element) => element.pageSettings?.name == config.pageSettings?.name);
       if (originalEntryIndex >= 0) {
         switch (preventDuplicateHandlingMode) {
           case PreventDuplicateHandlingMode.popUntilOriginalRoute:
@@ -209,9 +223,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     if (currentBranch != null && currentBranch.length > 1) {
       //remove last part only
       final remaining = currentBranch.take(currentBranch.length - 1);
-      final prevHistoryEntry = _activePages.length > 1
-          ? _activePages[_activePages.length - 2]
-          : null;
+      final prevHistoryEntry = _activePages.length > 1 ? _activePages[_activePages.length - 2] : null;
 
       //check if current route is the same as the previous route
       if (prevHistoryEntry != null) {
@@ -287,15 +299,13 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   ///
   /// visual pages must have [GetPage.participatesInRootNavigator] set to true
   Iterable<GetPage> getVisualPages(RouteDecoder? currentHistory) {
-    final res = currentHistory!.currentTreeBranch
-        .where((r) => r.participatesInRootNavigator != null);
+    final res = currentHistory!.currentTreeBranch.where((r) => r.participatesInRootNavigator != null);
     if (res.isEmpty) {
       //default behavior, all routes participate in root navigator
       return _activePages.map((e) => e.route!);
     } else {
       //user specified at least one participatesInRootNavigator
-      return res
-          .where((element) => element.participatesInRootNavigator == true);
+      return res.where((element) => element.participatesInRootNavigator == true);
     }
   }
 
@@ -304,8 +314,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     final currentHistory = currentConfiguration;
     final pages = currentHistory == null
         ? <GetPage>[]
-        : pickPagesForRootNavigator?.call(currentHistory).toList() ??
-            getVisualPages(currentHistory).toList();
+        : pickPagesForRootNavigator?.call(currentHistory).toList() ?? getVisualPages(currentHistory).toList();
     if (pages.isEmpty) {
       return ColoredBox(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -316,8 +325,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
       onPopPage: _onPopVisualRoute,
       pages: pages,
       observers: navigatorObservers,
-      transitionDelegate:
-          transitionDelegate ?? const DefaultTransitionDelegate<dynamic>(),
+      transitionDelegate: transitionDelegate ?? const DefaultTransitionDelegate<dynamic>(),
     );
   }
 
@@ -333,10 +341,12 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
 
   @protected
   void _popWithResult<T>([T? result]) {
+    // 移除栈顶的页面
     final completer = _activePages.removeLast().route?.completer;
     if (completer?.isCompleted == false) completer!.complete(result);
   }
 
+  /// 除了 [page] 和 [arguments]，其他参数都没有用到, 其实可以删除
   @override
   Future<T?> toNamed<T>(
     String page, {
@@ -345,11 +355,14 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     bool preventDuplicates = true,
     Map<String, String>? parameters,
   }) async {
+    // 根据 [page] 和 [arguments] 创建一个 [PageSettings] 对象
     final args = _buildPageSettings(page, arguments);
+    // 根据 [args] 创建一个 [RouteDecoder] 对象
     final route = _getRouteDecoder<T>(args);
     if (route != null) {
       return _push<T>(route);
     } else {
+      // 如果找不到对应的路由, 就直接跳转到未找到路由页面
       goToUnknownPage();
     }
     return null;
@@ -372,8 +385,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     bool showCupertinoParallax = true,
     double Function(BuildContext context)? gestureWidth,
     bool rebuildStack = true,
-    PreventDuplicateHandlingMode preventDuplicateHandlingMode =
-        PreventDuplicateHandlingMode.reorderRoutes,
+    PreventDuplicateHandlingMode preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
   }) async {
     routeName = _cleanRouteName("/${page.runtimeType}");
     // if (preventDuplicateHandlingMode ==
@@ -577,10 +589,12 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     _activePages.remove(RouteDecoder.fromRoute(name));
   }
 
+  /// 是否可以返回, 当 [_activePages] 只有一个页面时返回值为 false
   bool get canBack {
     return _activePages.length > 1;
   }
 
+  /// 检查是否可以返回, 如果不可以返回抛出异常
   void _checkIfCanBack() {
     assert(() {
       if (!canBack) {
@@ -593,8 +607,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   }
 
   @override
-  Future<R?> backAndtoNamed<T, R>(String page,
-      {T? result, Object? arguments}) async {
+  Future<R?> backAndtoNamed<T, R>(String page, {T? result, Object? arguments}) async {
     final args = _buildPageSettings(page, arguments);
     final route = _getRouteDecoder<R>(args);
     if (route == null) return null;
@@ -625,9 +638,12 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     notifyListeners();
   }
 
+  /// 循环返回直到条件成立
+  /// ? 为什么是这个判断条件? 写错了吧...
+  /// ? (_activePages.length <= 1 && !predicate(_activePages.last.route!))
   @override
   void backUntil(bool Function(GetPage) predicate) {
-    while (_activePages.length <= 1 && !predicate(_activePages.last.route!)) {
+    while (canBack && !predicate(_activePages.last.route!)) {
       _popWithResult();
     }
 
@@ -682,33 +698,40 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     return PageSettings(uri, data);
   }
 
+  /// 根据 [arguments] 生成 [RouteDecoder] 对象
   @protected
   RouteDecoder? _getRouteDecoder<T>(PageSettings arguments) {
+    // 获取路由 path
     var page = arguments.uri.path;
     final parameters = arguments.params;
+    // 如果有 [parameters] 则拼接参数
     if (parameters.isNotEmpty) {
       final uri = Uri(path: page, queryParameters: parameters);
       page = uri.toString();
     }
 
+    // 根据正则匹配 route, 从这个路由数中获取匹配的路由子树
     final decoder = _routeTree.matchRoute(page, arguments: arguments);
+    // 取出子树中的栈顶路由, 即展示在最前面的 GetPage
     final route = decoder.route;
     if (route == null) return null;
 
+    // 解码路由, 即合并参数
     return _configureRouterDecoder<T>(decoder, arguments);
   }
 
+  /// 合并所有的参数, 并将新的参数覆盖旧的参数
+  /// 返回新的 [RouteDecoder]
   @protected
-  RouteDecoder _configureRouterDecoder<T>(
-      RouteDecoder decoder, PageSettings arguments) {
-    final parameters =
-        arguments.params.isEmpty ? arguments.query : arguments.params;
+  RouteDecoder _configureRouterDecoder<T>(RouteDecoder decoder, PageSettings arguments) {
+    final parameters = arguments.params.isEmpty ? arguments.query : arguments.params;
     arguments.params.addAll(arguments.query);
     if (decoder.parameters.isEmpty) {
       decoder.parameters.addAll(parameters);
     }
 
     decoder.route = decoder.route?.copyWith(
+      // ???: 页面保活? _activePages 里存的是什么? 后面再看
       completer: _activePages.isEmpty ? null : Completer<T?>(),
       arguments: arguments,
       parameters: parameters,
@@ -719,34 +742,40 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   }
 
   Future<T?> _push<T>(RouteDecoder decoder, {bool rebuildStack = true}) async {
+    /// 跳转之前运行中间件
     var mid = await runMiddleware(decoder);
+    // 最终要 push 的路由
     final res = mid ?? decoder;
     // if (res == null) res = decoder;
 
     final preventDuplicateHandlingMode =
-        res.route?.preventDuplicateHandlingMode ??
-            PreventDuplicateHandlingMode.reorderRoutes;
+        res.route?.preventDuplicateHandlingMode ?? PreventDuplicateHandlingMode.reorderRoutes;
 
-    final onStackPage = _activePages
-        .firstWhereOrNull((element) => element.route?.key == res.route?.key);
+    /// 当前路由栈中是否有重复路由
+    final onStackPage = _activePages.firstWhereOrNull((element) => element.route?.key == res.route?.key);
 
     /// There are no duplicate routes in the stack
+    // 没有重复的路由, 则将新路由添加到路由栈中
     if (onStackPage == null) {
       _activePages.add(res);
     } else {
       /// There are duplicate routes, reorder
+      // 如果存在重复路线，需要对路由栈重新排序
       switch (preventDuplicateHandlingMode) {
         case PreventDuplicateHandlingMode.doNothing:
           break;
+        // 将找到的重复路由移除, 并将新路由添加到路由栈栈顶
         case PreventDuplicateHandlingMode.reorderRoutes:
           _activePages.remove(onStackPage);
           _activePages.add(res);
           break;
+        // 移除找到的重复路由后面的所有路由
         case PreventDuplicateHandlingMode.popUntilOriginalRoute:
           while (_activePages.last == onStackPage) {
             _popWithResult();
           }
           break;
+        // 和 reorderRoutes 模式一样
         case PreventDuplicateHandlingMode.recreate:
           _activePages.remove(onStackPage);
           _activePages.add(res);
@@ -754,6 +783,7 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
         default:
       }
     }
+    // 如果需要重新构建路由栈, 则通知监听
     if (rebuildStack) {
       notifyListeners();
     }
@@ -813,8 +843,11 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
 
   @override
   void back<T>([T? result]) {
+    // 检查是否有可以返回的页面
     _checkIfCanBack();
+    // 移除栈顶的页面
     _popWithResult<T>(result);
+    // 通知监听
     notifyListeners();
   }
 
