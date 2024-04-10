@@ -285,21 +285,21 @@ class ParseRouteTree {
   Map<String, String> _parseParams(String path, PathDecoded routePath) {
     final params = <String, String>{};
     var idx = path.indexOf('?');
+    final uri = Uri.tryParse(path);
+    if (uri == null) return params;
     if (idx > -1) {
-      // 获取 ? 之前的字符串
-      path = path.substring(0, idx);
-      final uri = Uri.tryParse(path);
-      if (uri != null) {
-        // ???: 没看懂这步的意义在哪里, 如果取 `?` 之前的路径, 为什么会有 queryParameters 参数呢?
-        params.addAll(uri.queryParameters);
-      }
+      // 如果 path 中有 ? 表示有参数, 有参数则添加所有参数
+      params.addAll(uri.queryParameters);
     }
     // 根据提前生成好的正则匹配出路由上所有的参数
-    var paramsMatch = routePath.regex.firstMatch(path);
-
+    var paramsMatch = routePath.regex.firstMatch(uri.path);
+    if (paramsMatch == null) {
+      return params;
+    }
     for (var i = 0; i < routePath.keys.length; i++) {
-      // 解码
-      var param = Uri.decodeQueryComponent(paramsMatch![i + 1]!);
+      // 参数解码
+      var param = Uri.decodeQueryComponent(paramsMatch[i + 1]!);
+      // 参数替换
       params[routePath.keys[i]!] = param;
     }
     return params;
