@@ -363,7 +363,7 @@ Cannot read the previousTitle for a route that has not yet been installed''',
     // In the middle of a back gesture drag, let the transition be linear to
     // match finger motions.
     final route = rawRoute as GetPageRoute<T>;
-    final linearTransition = CupertinoRouteTransitionMixin.isPopGestureInProgress(route);
+    final linearTransition = route.popGestureInProgress;
     final finalCurve = route.curve ?? Get.defaultTransitionCurve;
     final hasCurve = route.curve != null;
     if (route.fullscreenDialog && route.transition == null) {
@@ -732,9 +732,6 @@ Cannot read the previousTitle for a route that has not yet been installed''',
     // would be really confusing (or would skip internal routes),
     // so disallow it.
     if (route.willHandlePopInternally) return false;
-    // If attempts to dismiss this route might be vetoed such as in a page
-    // with forms, then do not allow the user to dismiss the route with a swipe.
-    if (route.hasScopedWillPopCallback) return false;
     // support [PopScope]
     if (route.popDisposition == RoutePopDisposition.doNotPop) return false;
     // Fullscreen dialogs aren't dismissible by back swipe.

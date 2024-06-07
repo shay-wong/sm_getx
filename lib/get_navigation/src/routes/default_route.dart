@@ -84,6 +84,7 @@ class GetPageRoute<T> extends PageRoute<T> with GetPageRouteTransitionMixin<T>, 
 
   @override
   final bool opaque;
+
   /// 是否添加滑动返回手势
   final bool? popGesture;
 

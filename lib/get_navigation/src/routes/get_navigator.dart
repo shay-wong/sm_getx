@@ -4,7 +4,6 @@ import '../../../get.dart';
 
 class GetNavigator extends Navigator {
   GetNavigator.onGenerateRoute({
-    //keys should be optional
     GlobalKey<NavigatorState>? super.key,
     bool Function(Route<dynamic>, dynamic)? onPopPage,
     required List<GetPage> super.pages,
@@ -14,6 +13,7 @@ class GetNavigator extends Navigator {
     super.initialRoute,
     super.restorationScopeId,
   }) : super(
+          //keys should be optional
           onPopPage: onPopPage ??
               (route, result) {
                 final didPop = route.didPop(result);
@@ -43,7 +43,6 @@ class GetNavigator extends Navigator {
         );
 
   GetNavigator({
-    //keys should be optional
     super.key,
     bool Function(Route<dynamic>, dynamic)? onPopPage,
     required List<GetPage> super.pages,
@@ -53,6 +52,7 @@ class GetNavigator extends Navigator {
     super.initialRoute,
     super.restorationScopeId,
   }) : super(
+          //keys should be optional
           onPopPage: onPopPage ??
               (route, result) {
                 final didPop = route.didPop(result);

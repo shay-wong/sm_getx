@@ -293,9 +293,8 @@ class GetRoot extends StatefulWidget {
     required this.config,
     required this.child,
   });
-
-  final Widget child;
   final ConfigData config;
+  final Widget child;
 
   @override
   State<GetRoot> createState() => GetRootState();

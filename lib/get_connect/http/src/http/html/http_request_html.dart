@@ -53,7 +53,7 @@ class HttpRequestImpl implements IClient {
       reader.onLoad.first.then((_) async {
         var bodyBytes = (reader.result as List<int>).toStream();
 
-        if(request.responseInterceptor != null) throw 'response interception not implemented for web yet!';
+        if (request.responseInterceptor != null) throw 'response interception not implemented for web yet!';
 
         /*
         TODO to be implemented like in http_request_io.dart
@@ -66,8 +66,7 @@ class HttpRequestImpl implements IClient {
 
         */
 
-        final stringBody =
-            await bodyBytesToString(bodyBytes, xhr.responseHeaders);
+        final stringBody = await bodyBytesToString(bodyBytes, xhr.responseHeaders);
 
         String? contentType;
 
@@ -106,9 +105,7 @@ class HttpRequestImpl implements IClient {
     });
 
     xhr.onError.first.then((_) {
-      completer.completeError(
-          GetHttpException('XMLHttpRequest error.', request.url),
-          StackTrace.current);
+      completer.completeError(GetHttpException('XMLHttpRequest error.', request.url), StackTrace.current);
     });
 
     xhr.send(bytes);

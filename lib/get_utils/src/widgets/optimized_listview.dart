@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class OtimizedListView<T> extends StatelessWidget {
+class OptimizedListView<T> extends StatelessWidget {
   final List<T> list;
   final Axis scrollDirection;
   final bool reverse;
@@ -11,7 +11,7 @@ class OtimizedListView<T> extends StatelessWidget {
   final Widget onEmpty;
   final int length;
   final Widget Function(BuildContext context, ValueKey key, T item) builder;
-  const OtimizedListView({
+  const OptimizedListView({
     super.key,
     required this.list,
     required this.builder,
