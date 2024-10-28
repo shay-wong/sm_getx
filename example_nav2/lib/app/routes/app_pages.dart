@@ -7,10 +7,6 @@ import '../middleware/auth_middleware.dart';
 import '../modules/dashboard/bindings/dashboard_binding.dart';
 import '../modules/dashboard/views/dashboard_view.dart';
 import '../modules/home/bindings/home_binding.dart';
-import '../modules/home/next/bindings/next_binding.dart';
-import '../modules/home/next/latter/bindings/latter_binding.dart';
-import '../modules/home/next/latter/views/latter_page.dart';
-import '../modules/home/next/views/next_page.dart';
 import '../modules/home/views/home_view.dart';
 import '../modules/login/bindings/login_binding.dart';
 import '../modules/login/views/login_view.dart';
@@ -98,19 +94,6 @@ class AppPages {
                 ),
               ],
             ),
-            GetPage(
-              name: _Paths.next,
-              page: () => const NextPage(),
-              binding: NextBinding(),
-              popGesture: true,
-              children: [
-                GetPage(
-                  name: _Paths.latter,
-                  page: () => const LatterPage(),
-                  binding: LatterBinding(),
-                ),
-              ],
-            ),
           ],
         ),
         GetPage(
@@ -118,21 +101,6 @@ class AppPages {
           page: () => const SettingsView(),
           bindings: [
             SettingsBinding(),
-          ],
-        ),
-        GetPage(
-          name: _Paths.next,
-          page: () => const NextPage(),
-          binding: NextBinding(),
-          popGesture: true,
-          participatesInRootNavigator: true,
-          children: [
-            GetPage(
-              name: _Paths.latter,
-              page: () => const LatterPage(),
-              binding: LatterBinding(),
-              participatesInRootNavigator: true,
-            ),
           ],
         ),
       ],

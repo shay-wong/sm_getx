@@ -21,28 +21,16 @@ class HomeView extends GetView<HomeController> {
             route: Routes.home,
             builder: (context) {
               return Scaffold(
-                appBar: AppBar(
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Get.toNamed(Routes.next);
-                      },
-                      child: const Text('Next'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Get.toNamed(Routes.homeNext);
-                      },
-                      child: const Text('Home Next'),
-                    ),
-                  ],
-                ),
                 body: GetRouterOutlet(
                   initialRoute: Routes.dashboard,
                   anchorRoute: Routes.home,
                 ),
                 bottomNavigationBar: IndexedRouteBuilder(
-                    routes: const [Routes.dashboard, Routes.profile, Routes.products],
+                    routes: const [
+                      Routes.dashboard,
+                      Routes.profile,
+                      Routes.products
+                    ],
                     builder: (context, routes, index) {
                       final delegate = context.delegate;
                       return BottomNavigationBar(
