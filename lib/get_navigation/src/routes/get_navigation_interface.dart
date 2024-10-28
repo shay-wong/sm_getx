@@ -12,12 +12,12 @@ import '../routes/transitions_type.dart';
 /// 1) /home
 /// 2) /home/products/1234
 ///
-/// when popping on [History] mode, it will emulate a browser back button.
+/// when popping on [history] mode, it will emulate a browser back button.
 ///
 /// so the new _activePages stack will be:
 /// 1) /home
 ///
-/// when popping on [Page] mode, it will only remove the last part of the route
+/// when popping on [page] mode, it will only remove the last part of the route
 /// so the new _activePages stack will be:
 /// 1) /home
 /// 2) /home/products
@@ -33,17 +33,22 @@ enum PopMode {
 /// shouldn't be duplicates
 enum PreventDuplicateHandlingMode {
   /// Removes the _activePages entries until it reaches the old route
+  /// 移除 [_activePages] 中找到的重复路由后面的所有路由
   popUntilOriginalRoute,
 
   /// Simply don't push the new route
+  /// 不做任何操作
   doNothing,
 
   /// Recommended - Moves the old route entry to the front
   ///
   /// With this mode, you guarantee there will be only one
   /// route entry for each location
+  /// 推荐 - 将旧路由从原本位置移除并移到最前面
+  /// 使用此模式，可以保证路由栈中只存在唯一的路由
   reorderRoutes,
 
+  /// 和 reorderRoutes 一样
   recreate,
 }
 

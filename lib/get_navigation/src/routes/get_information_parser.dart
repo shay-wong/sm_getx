@@ -4,18 +4,20 @@ import 'package:flutter/widgets.dart';
 import '../../../get.dart';
 
 class GetInformationParser extends RouteInformationParser<RouteDecoder> {
-  factory GetInformationParser.createInformationParser(
-      {String initialRoute = '/'}) {
-    return GetInformationParser(initialRoute: initialRoute);
-  }
-
-  final String initialRoute;
-
   GetInformationParser({
     required this.initialRoute,
   }) {
     Get.log('GetInformationParser is created !');
   }
+
+  factory GetInformationParser.createInformationParser({
+    String initialRoute = '/',
+  }) {
+    return GetInformationParser(initialRoute: initialRoute);
+  }
+
+  final String initialRoute;
+
   @override
   SynchronousFuture<RouteDecoder> parseRouteInformation(
     RouteInformation routeInformation,
@@ -25,9 +27,8 @@ class GetInformationParser extends RouteInformationParser<RouteDecoder> {
     if (location == '/') {
       //check if there is a corresponding page
       //if not, relocate to initialRoute
-      if (!(Get.rootController.rootDelegate)
-          .registeredRoutes
-          .any((element) => element.name == '/')) {
+      // 检查路由表中是否有 '/' 对应的页面，如果没有，则重新定位到 initialRoute
+      if (!(Get.rootController.rootDelegate).registeredRoutes.any((element) => element.name == '/')) {
         location = initialRoute;
       }
     } else if (location.isEmpty) {

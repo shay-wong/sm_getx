@@ -63,7 +63,10 @@ class GetPageRoute<T> extends PageRoute<T>
     this.maintainState = true,
     super.fullscreenDialog,
     this.middlewares,
-  }) : bindings = (binding == null) ? bindings : [...bindings, binding];
+    this.limitedSwipe,
+    this.initialOffset,
+  })  : bindings = (binding == null) ? bindings : [...bindings, binding],
+        _middlewareRunner = MiddlewareRunner(middlewares);
 
   @override
   final Duration transitionDuration;
@@ -83,7 +86,15 @@ class GetPageRoute<T> extends PageRoute<T>
 
   @override
   final bool opaque;
+
+  /// 是否添加滑动返回手势
   final bool? popGesture;
+
+  /// 是否限制滑动手势的触发距离, 默认为 false 全屏手势
+  final bool? limitedSwipe;
+
+  /// 滑动手势的初始偏移, [limitedSwipe] 为 true 时生效, 默认为 0
+  final double? initialOffset;
 
   @override
   final bool barrierDismissible;
@@ -101,11 +112,12 @@ class GetPageRoute<T> extends PageRoute<T>
   @override
   final bool maintainState;
 
+  final MiddlewareRunner _middlewareRunner;
+
   @override
   void dispose() {
     super.dispose();
-    final middlewareRunner = MiddlewareRunner(middlewares);
-    middlewareRunner.runOnPageDispose();
+    _middlewareRunner.runOnPageDispose();
     _child = null;
   }
 
@@ -113,14 +125,13 @@ class GetPageRoute<T> extends PageRoute<T>
 
   Widget _getChild() {
     if (_child != null) return _child!;
-    final middlewareRunner = MiddlewareRunner(middlewares);
 
     final localBinds = [if (binds != null) ...binds!];
 
-    final bindingsToBind = middlewareRunner
+    final bindingsToBind = _middlewareRunner
         .runOnBindingsStart(bindings.isNotEmpty ? bindings : localBinds);
 
-    final pageToBuild = middlewareRunner.runOnPageBuildStart(page)!;
+    final pageToBuild = _middlewareRunner.runOnPageBuildStart(page)!;
 
     if (bindingsToBind != null && bindingsToBind.isNotEmpty) {
       if (bindingsToBind is List<BindingsInterface>) {
@@ -129,19 +140,19 @@ class GetPageRoute<T> extends PageRoute<T>
           if (dep is List<Bind>) {
             _child = Binds(
               binds: dep,
-              child: middlewareRunner.runOnPageBuilt(pageToBuild()),
+              child: _middlewareRunner.runOnPageBuilt(pageToBuild()),
             );
           }
         }
       } else if (bindingsToBind is List<Bind>) {
         _child = Binds(
           binds: bindingsToBind,
-          child: middlewareRunner.runOnPageBuilt(pageToBuild()),
+          child: _middlewareRunner.runOnPageBuilt(pageToBuild()),
         );
       }
     }
 
-    return _child ??= middlewareRunner.runOnPageBuilt(pageToBuild());
+    return _child ??= _middlewareRunner.runOnPageBuilt(pageToBuild());
   }
 
   @override
@@ -155,6 +166,7 @@ class GetPageRoute<T> extends PageRoute<T>
   @override
   String get debugLabel => '${super.debugLabel}(${settings.name})';
 
+  /// 手势的宽度, [limitedSwipe] 为 true 时生效, 默认为 [MediaQueryData.padding] 的 [left] 或 [right]
   @override
   final double Function(BuildContext context)? gestureWidth;
 }

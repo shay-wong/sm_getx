@@ -167,9 +167,17 @@ abstract class _RxImpl<T> extends GetListenable<T> with RxObjectMixin<T> {
   /// });
   /// print( person );
   /// ```
-  void update(T Function(T? val) fn) {
+  /// ? 为什么参数要用 T?, value 就是 T 类型的, 所以修改成了 T 类型
+  void update(T Function(T val) fn) {
     value = fn(value);
     // subject.add(value);
+  }
+
+  /// 针对多层嵌套的 Model 更新数据
+  void updateTo(void Function(T val) fn) {
+    fn(value);
+    if (isDisposed) return;
+    refresh();
   }
 
   /// Following certain practices on Rx data, we might want to react to certain
