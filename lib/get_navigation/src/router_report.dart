@@ -21,7 +21,8 @@ class RouterReportManager<T> {
 
   RouterReportManager._();
 
-  static RouterReportManager get instance => _instance ??= RouterReportManager._();
+  static RouterReportManager get instance =>
+      _instance ??= RouterReportManager._();
 
   static void dispose() {
     _instance = null;
@@ -126,6 +127,8 @@ class RouterReportManager<T> {
         _routesKey[routeName]?.remove(element);
       }
     }
+
+    _routesKey.remove(routeName);
 
     keysToRemove.clear();
   }

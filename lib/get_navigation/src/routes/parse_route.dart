@@ -18,7 +18,8 @@ class RouteDecoder {
   factory RouteDecoder.fromRoute(String location) {
     var uri = Uri.parse(location);
     final args = PageSettings(uri);
-    final decoder = (Get.rootController.rootDelegate).matchRoute(location, arguments: args);
+    final decoder =
+        (Get.rootController.rootDelegate).matchRoute(location, arguments: args);
     decoder.route = decoder.route?.copyWith(
       completer: null,
       arguments: args,
@@ -27,9 +28,11 @@ class RouteDecoder {
     return decoder;
   }
 
-  GetPage? get route => currentTreeBranch.isEmpty ? null : currentTreeBranch.last;
+  GetPage? get route =>
+      currentTreeBranch.isEmpty ? null : currentTreeBranch.last;
 
-  GetPage routeOrUnknown(GetPage onUnknow) => currentTreeBranch.isEmpty ? onUnknow : currentTreeBranch.last;
+  GetPage routeOrUnknown(GetPage onUnknow) =>
+      currentTreeBranch.isEmpty ? onUnknow : currentTreeBranch.last;
 
   set route(GetPage? getPage) {
     if (getPage == null) return;
@@ -57,13 +60,13 @@ class RouteDecoder {
     }
   }
 
-  void replaceArguments(Object? arguments) {
-    final newRoute = route;
-    if (newRoute != null) {
-      final index = currentTreeBranch.indexOf(newRoute);
-      currentTreeBranch[index] = newRoute.copyWith(arguments: arguments);
-    }
-  }
+  // void replaceArguments(Object? arguments) {
+  //   final newRoute = route;
+  //   if (newRoute != null) {
+  //     final index = currentTreeBranch.indexOf(newRoute);
+  //     currentTreeBranch[index] = newRoute.copyWith(arguments: arguments);
+  //   }
+  // }
 
   @override
   bool operator ==(Object other) {
@@ -78,7 +81,8 @@ class RouteDecoder {
   int get hashCode => currentTreeBranch.hashCode ^ pageSettings.hashCode;
 
   @override
-  String toString() => 'RouteDecoder(currentTreeBranch: $currentTreeBranch, pageSettings: $pageSettings)';
+  String toString() =>
+      'RouteDecoder(currentTreeBranch: $currentTreeBranch, pageSettings: $pageSettings)';
 }
 
 class ParseRouteTree {
@@ -122,14 +126,15 @@ class ParseRouteTree {
         // 移除未找到的 key
         .where((element) => element.value != null)
 
-        ///Prevent page be disposed 防止页面被销毁
+        // Prevent page be disposed
+        // 防止页面被销毁
         .map((e) => MapEntry(e.key, e.value!.copyWith(key: ValueKey(e.key))))
         .toList();
 
     // 解析路径参数（如果有）并将它们与查询参数合并。
     final params = Map<String, String>.from(uri.queryParameters);
     if (treeBranch.isNotEmpty) {
-      //route is found, do further parsing to get nested query params
+      // route is found, do further parsing to get nested query params
       // 找到路由，进行进一步解析以获取嵌套的 query params
       final lastRoute = treeBranch.last;
       // 解析路径参数
@@ -137,7 +142,7 @@ class ParseRouteTree {
       if (parsedParams.isNotEmpty) {
         params.addAll(parsedParams);
       }
-      //copy parameters to all pages.
+      // copy parameters to all pages.
       // 将参数复制到所有页面。
       final mappedTreeBranch = treeBranch
           .map(
@@ -162,7 +167,7 @@ class ParseRouteTree {
     arguments?.params.clear();
     arguments?.params.addAll(params);
 
-    //route not found
+    // route not found
     // 如果没有找到匹配的路由，返回一个包含空路由信息的 [RouteDecoder] 对象。
     return RouteDecoder(
       treeBranch.map((e) => e.value).toList(),
@@ -218,7 +223,10 @@ class ParseRouteTree {
         if (route.bindings.isNotEmpty) ...route.bindings
       ];
 
-      final parentBinds = [if (page.binds.isNotEmpty) ...page.binds, if (route.binds.isNotEmpty) ...route.binds];
+      final parentBinds = [
+        if (page.binds.isNotEmpty) ...page.binds,
+        if (route.binds.isNotEmpty) ...route.binds
+      ];
 
       result.add(
         _addChild(
@@ -264,7 +272,9 @@ class ParseRouteTree {
   ) {
     return origin.copyWith(
       middlewares: middlewares,
-      name: origin.inheritParentPath ? (parentPath + origin.name).replaceAll(r'//', '/') : origin.name,
+      name: origin.inheritParentPath
+          ? (parentPath + origin.name).replaceAll(r'//', '/')
+          : origin.name,
       bindings: bindings,
       binds: binds,
       // key:

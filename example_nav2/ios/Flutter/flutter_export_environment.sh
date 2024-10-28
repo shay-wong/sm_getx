@@ -1,7 +1,7 @@
 #!/bin/sh
 # This is a generated file; do not edit or check into version control.
 export "FLUTTER_ROOT=/Users/Dawn/fvm/versions/stable"
-export "FLUTTER_APPLICATION_PATH=/Users/Dawn/Documents/GitHub/Fork/sm_getx/example_nav2"
+export "FLUTTER_APPLICATION_PATH=/Users/Dawn/Desktop/Work/GitHub/Fork/sm_getx/example_nav2"
 export "COCOAPODS_PARALLEL_CODE_SIGN=true"
 export "FLUTTER_TARGET=lib/main.dart"
 export "FLUTTER_BUILD_DIR=build"

@@ -61,6 +61,7 @@ class GetPage<T> extends Page<T> {
 
   /// 滑动手势的初始偏移, [limitedSwipe] 为 true 时生效, 默认为 0
   final double? initialOffset;
+  static void _defaultPopInvokedHandler(bool didPop, Object? result) {}
 
   GetPage({
     required this.name,
@@ -89,14 +90,19 @@ class GetPage<T> extends Page<T> {
     this.arguments,
     this.showCupertinoParallax = true,
     this.preventDuplicates = true,
-    this.preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
+    this.preventDuplicateHandlingMode =
+        PreventDuplicateHandlingMode.reorderRoutes,
     this.completer,
     this.inheritParentPath = true,
     this.limitedSwipe,
     this.initialOffset,
     LocalKey? key,
+    super.canPop,
+    super.onPopInvoked = _defaultPopInvokedHandler,
+    super.restorationId,
   })  : path = _nameToRegex(name),
-        assert(name.startsWith('/'), 'It is necessary to start route name [$name] with a slash: /$name'),
+        assert(name.startsWith('/'),
+            'It is necessary to start route name [$name] with a slash: /$name'),
         super(
           key: key ?? ValueKey(name),
           name: name,
@@ -134,12 +140,14 @@ class GetPage<T> extends Page<T> {
     bool? showCupertinoParallax,
     Completer<T?>? completer,
     bool? inheritParentPath,
-    bool? limitedSwipe,
-    double? initialOffset,
+    bool? canPop,
+    PopInvokedWithResultCallback<T>? onPopInvoked,
+    String? restorationId,
   }) {
     return GetPage(
       key: key ?? this.key,
-      participatesInRootNavigator: participatesInRootNavigator ?? this.participatesInRootNavigator,
+      participatesInRootNavigator:
+          participatesInRootNavigator ?? this.participatesInRootNavigator,
       preventDuplicates: preventDuplicates ?? this.preventDuplicates,
       name: name ?? this.name,
       page: page ?? this.page,
@@ -156,18 +164,21 @@ class GetPage<T> extends Page<T> {
       binding: binding ?? this.binding,
       customTransition: customTransition ?? this.customTransition,
       transitionDuration: transitionDuration ?? this.transitionDuration,
-      reverseTransitionDuration: reverseTransitionDuration ?? this.reverseTransitionDuration,
+      reverseTransitionDuration:
+          reverseTransitionDuration ?? this.reverseTransitionDuration,
       fullscreenDialog: fullscreenDialog ?? this.fullscreenDialog,
       children: children ?? this.children,
       unknownRoute: unknownRoute ?? this.unknownRoute,
       middlewares: middlewares ?? this.middlewares,
       gestureWidth: gestureWidth ?? this.gestureWidth,
       arguments: arguments ?? this.arguments,
-      showCupertinoParallax: showCupertinoParallax ?? this.showCupertinoParallax,
+      showCupertinoParallax:
+          showCupertinoParallax ?? this.showCupertinoParallax,
       completer: completer ?? this.completer,
       inheritParentPath: inheritParentPath ?? this.inheritParentPath,
-      limitedSwipe: limitedSwipe ?? this.limitedSwipe,
-      initialOffset: initialOffset ?? this.initialOffset,
+      canPop: canPop ?? this.canPop,
+      onPopInvoked: onPopInvoked ?? this.onPopInvoked,
+      restorationId: restorationId ?? restorationId,
     );
   }
 
@@ -234,7 +245,9 @@ class GetPage<T> extends Page<T> {
     // 在 recursiveReplace 函数中，通过这个正则表达式识别出的组件（.、参数名、?）被用于构建新的正则表达式，这个新的正则表达式将用于实际的路径匹配。
     // 同时，参数名称（匹配的第二部分）被收集到 keys 数组中，以便后续使用。
     // 最后，用 replaceAll 方法替换所有双斜杠 // 为单斜杠 /，以避免生成无效的正则表达式。
-    var stringPath = '$path/?'.replaceAllMapped(RegExp(r'(\.)?:(\w+)(\?)?'), recursiveReplace).replaceAll('//', '/');
+    var stringPath = '$path/?'
+        .replaceAllMapped(RegExp(r'(\.)?:(\w+)(\?)?'), recursiveReplace)
+        .replaceAll('//', '/');
 
     // 生成并返回 PathDecoded 对象：使用处理后的 stringPath 创建一个 RegExp 对象，并将其与提取的 keys 数组一起封装在一个 PathDecoded 对象中返回。PathDecoded 是一个自定义类，它包含了生成的正则表达式和路径参数名称列表。
     return PathDecoded(RegExp('^$stringPath\$'), keys);
@@ -247,7 +260,8 @@ class GetPage<T> extends Page<T> {
   }
 
   @override
-  String toString() => '${objectRuntimeType(this, 'Page')}("$name", $key, $arguments)';
+  String toString() =>
+      '${objectRuntimeType(this, 'Page')}("$name", $key, $arguments)';
 
   @override
   int get hashCode {
@@ -272,6 +286,7 @@ class PathDecoded {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
 
-    return other is PathDecoded && other.regex == regex; // && listEquals(other.keys, keys);
+    return other is PathDecoded &&
+        other.regex == regex; // && listEquals(other.keys, keys);
   }
 }

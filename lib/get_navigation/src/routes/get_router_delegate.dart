@@ -9,14 +9,18 @@ import '../../../route_manager.dart';
 
 /// 导航代理, 用来处理导航相关的逻辑
 class GetDelegate extends RouterDelegate<RouteDecoder>
-    with ChangeNotifier, PopNavigatorRouterDelegateMixin<RouteDecoder>, IGetNavigation {
+    with
+        ChangeNotifier,
+        PopNavigatorRouterDelegateMixin<RouteDecoder>,
+        IGetNavigation {
   factory GetDelegate.createDelegate({
     GetPage<dynamic>? notFoundRoute,
     List<GetPage> pages = const [],
     List<NavigatorObserver>? navigatorObservers,
     TransitionDelegate<dynamic>? transitionDelegate,
     PopMode backButtonPopMode = PopMode.history,
-    PreventDuplicateHandlingMode preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
+    PreventDuplicateHandlingMode preventDuplicateHandlingMode =
+        PreventDuplicateHandlingMode.reorderRoutes,
     GlobalKey<NavigatorState>? navigatorKey,
   }) {
     return GetDelegate(
@@ -40,7 +44,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   final List<NavigatorObserver>? navigatorObservers;
   final TransitionDelegate<dynamic>? transitionDelegate;
 
-  final Iterable<GetPage> Function(RouteDecoder currentNavStack)? pickPagesForRootNavigator;
+  final Iterable<GetPage> Function(RouteDecoder currentNavStack)?
+      pickPagesForRootNavigator;
 
   List<RouteDecoder> get activePages => _activePages;
 
@@ -88,7 +93,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     this.navigatorObservers,
     this.transitionDelegate,
     this.backButtonPopMode = PopMode.history,
-    this.preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
+    this.preventDuplicateHandlingMode =
+        PreventDuplicateHandlingMode.reorderRoutes,
     this.pickPagesForRootNavigator,
     this.restorationScopeId,
     bool showHashOnUrl = false,
@@ -120,8 +126,16 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
       // 执行 redirectDelegate 函数
       var redirectRes = await item.redirectDelegate(iterator);
       // 返回 null 和上面返回 config 结果是一样的, 都是不重定向
-      if (redirectRes == null) return null;
+      if (redirectRes == null) {
+        config.route?.completer?.complete();
+        return null;
+      }
       // 如果 redirectRes 不为空则覆盖 iterator
+      if (config != redirectRes) {
+        config.route?.completer?.complete();
+        Get.log('Redirect to ${redirectRes.pageSettings?.name}');
+      }
+
       iterator = redirectRes;
       // Stop the iteration over the middleware if we changed page
       // and that redirectRes is not the same as the current config.
@@ -182,8 +196,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
 
   Future<void> _pushHistory(RouteDecoder config) async {
     if (config.route!.preventDuplicates) {
-      final originalEntryIndex =
-          _activePages.indexWhere((element) => element.pageSettings?.name == config.pageSettings?.name);
+      final originalEntryIndex = _activePages.indexWhere(
+          (element) => element.pageSettings?.name == config.pageSettings?.name);
       if (originalEntryIndex >= 0) {
         switch (preventDuplicateHandlingMode) {
           case PreventDuplicateHandlingMode.popUntilOriginalRoute:
@@ -223,7 +237,9 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     if (currentBranch != null && currentBranch.length > 1) {
       //remove last part only
       final remaining = currentBranch.take(currentBranch.length - 1);
-      final prevHistoryEntry = _activePages.length > 1 ? _activePages[_activePages.length - 2] : null;
+      final prevHistoryEntry = _activePages.length > 1
+          ? _activePages[_activePages.length - 2]
+          : null;
 
       //check if current route is the same as the previous route
       if (prevHistoryEntry != null) {
@@ -299,13 +315,15 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   ///
   /// visual pages must have [GetPage.participatesInRootNavigator] set to true
   Iterable<GetPage> getVisualPages(RouteDecoder? currentHistory) {
-    final res = currentHistory!.currentTreeBranch.where((r) => r.participatesInRootNavigator != null);
+    final res = currentHistory!.currentTreeBranch
+        .where((r) => r.participatesInRootNavigator != null);
     if (res.isEmpty) {
       //default behavior, all routes participate in root navigator
       return _activePages.map((e) => e.route!);
     } else {
       //user specified at least one participatesInRootNavigator
-      return res.where((element) => element.participatesInRootNavigator == true);
+      return res
+          .where((element) => element.participatesInRootNavigator == true);
     }
   }
 
@@ -314,7 +332,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     final currentHistory = currentConfiguration;
     final pages = currentHistory == null
         ? <GetPage>[]
-        : pickPagesForRootNavigator?.call(currentHistory).toList() ?? getVisualPages(currentHistory).toList();
+        : pickPagesForRootNavigator?.call(currentHistory).toList() ??
+            getVisualPages(currentHistory).toList();
     if (pages.isEmpty) {
       return ColoredBox(
         color: Theme.of(context).scaffoldBackgroundColor,
@@ -325,7 +344,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
       onPopPage: _onPopVisualRoute,
       pages: pages,
       observers: navigatorObservers,
-      transitionDelegate: transitionDelegate ?? const DefaultTransitionDelegate<dynamic>(),
+      transitionDelegate:
+          transitionDelegate ?? const DefaultTransitionDelegate<dynamic>(),
     );
   }
 
@@ -385,7 +405,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
     bool showCupertinoParallax = true,
     double Function(BuildContext context)? gestureWidth,
     bool rebuildStack = true,
-    PreventDuplicateHandlingMode preventDuplicateHandlingMode = PreventDuplicateHandlingMode.reorderRoutes,
+    PreventDuplicateHandlingMode preventDuplicateHandlingMode =
+        PreventDuplicateHandlingMode.reorderRoutes,
   }) async {
     routeName = _cleanRouteName("/${page.runtimeType}");
     // if (preventDuplicateHandlingMode ==
@@ -531,11 +552,11 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
 
     final newPredicate = predicate ?? (route) => false;
 
-    while (_activePages.length > 1 && newPredicate(_activePages.last.route!)) {
+    while (_activePages.length > 1 && !newPredicate(_activePages.last.route!)) {
       _activePages.removeLast();
     }
 
-    return _replaceNamed(route);
+    return _push(route);
   }
 
   @override
@@ -607,7 +628,8 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   }
 
   @override
-  Future<R?> backAndtoNamed<T, R>(String page, {T? result, Object? arguments}) async {
+  Future<R?> backAndtoNamed<T, R>(String page,
+      {T? result, Object? arguments}) async {
     final args = _buildPageSettings(page, arguments);
     final route = _getRouteDecoder<R>(args);
     if (route == null) return null;
@@ -641,9 +663,10 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   /// 循环返回直到条件成立
   /// ? 为什么是这个判断条件? 写错了吧...
   /// ? (_activePages.length <= 1 && !predicate(_activePages.last.route!))
+  /// 果然是之前的判断条件错了
   @override
   void backUntil(bool Function(GetPage) predicate) {
-    while (canBack && !predicate(_activePages.last.route!)) {
+    while (_activePages.length > 1 && !predicate(_activePages.last.route!)) {
       _popWithResult();
     }
 
@@ -723,8 +746,10 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
   /// 合并所有的参数, 并将新的参数覆盖旧的参数
   /// 返回新的 [RouteDecoder]
   @protected
-  RouteDecoder _configureRouterDecoder<T>(RouteDecoder decoder, PageSettings arguments) {
-    final parameters = arguments.params.isEmpty ? arguments.query : arguments.params;
+  RouteDecoder _configureRouterDecoder<T>(
+      RouteDecoder decoder, PageSettings arguments) {
+    final parameters =
+        arguments.params.isEmpty ? arguments.query : arguments.params;
     arguments.params.addAll(arguments.query);
     if (decoder.parameters.isEmpty) {
       decoder.parameters.addAll(parameters);
@@ -743,16 +768,20 @@ class GetDelegate extends RouterDelegate<RouteDecoder>
 
   Future<T?> _push<T>(RouteDecoder decoder, {bool rebuildStack = true}) async {
     /// 跳转之前运行中间件
-    var mid = await runMiddleware(decoder);
-    // 最终要 push 的路由
-    final res = mid ?? decoder;
+    var res = await runMiddleware(decoder);
+    // 如果中间件返回 null 则不跳转
+    if (res == null) return null;
+    // // 最终要 push 的路由
+    // final res = mid ?? decoder;
     // if (res == null) res = decoder;
 
     final preventDuplicateHandlingMode =
-        res.route?.preventDuplicateHandlingMode ?? PreventDuplicateHandlingMode.reorderRoutes;
+        res.route?.preventDuplicateHandlingMode ??
+            PreventDuplicateHandlingMode.reorderRoutes;
 
     /// 当前路由栈中是否有重复路由
-    final onStackPage = _activePages.firstWhereOrNull((element) => element.route?.key == res.route?.key);
+    final onStackPage = _activePages
+        .firstWhereOrNull((element) => element.route?.key == res.route?.key);
 
     /// There are no duplicate routes in the stack
     // 没有重复的路由, 则将新路由添加到路由栈中

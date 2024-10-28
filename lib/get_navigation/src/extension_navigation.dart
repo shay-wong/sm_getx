@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:get/get_navigation/src/routes/test_kit.dart';
 
 import '../../get.dart';
 import 'dialog/dialog_route.dart';
@@ -171,7 +172,7 @@ extension ExtensionDialog on GetInterface {
     List<Widget>? actions,
 
     // onWillPop Scope
-    PopInvokedCallback? onWillPop,
+    PopInvokedWithResultCallback<T>? onWillPop,
 
     // the navigator used to push the dialog
     GlobalKey<NavigatorState>? navigatorKey,
@@ -267,8 +268,10 @@ extension ExtensionDialog on GetInterface {
 
     return dialog<T>(
       onWillPop != null
-          ? PopScope(
-              onPopInvoked: onWillPop,
+          ? PopScope<T>(
+              onPopInvokedWithResult: (didPop, result) =>
+                  onWillPop(didPop, result),
+              // onPopInvoked: onWillPop,
               child: baseAlertDialog,
             )
           : baseAlertDialog,
@@ -585,7 +588,7 @@ extension GetNavigationExt on GetInterface {
     dynamic arguments,
     dynamic id,
     @Deprecated(
-        'preventDuplicates 已被已用, 相关代码被注释掉了, 重复路由的相关逻辑处理放到了 preventDuplicateHandlingMode 中, 请使用 preventDuplicateHandlingMode 来处理')
+        'preventDuplicates 已被弃用, 相关代码被注释掉了, 重复路由的相关逻辑处理放到了 preventDuplicateHandlingMode 中, 请使用 preventDuplicateHandlingMode 来处理')
     bool preventDuplicates = true,
     Map<String, String>? parameters,
   }) {
@@ -1200,10 +1203,6 @@ extension GetNavigationExt on GetInterface {
     return key;
   }
 
-  /// give current arguments
-  //dynamic get arguments => routing.args;
-  dynamic get arguments => rootController.rootDelegate.arguments();
-
   /// give name from current route
   String get currentRoute => routing.current;
 
@@ -1345,14 +1344,37 @@ extension GetNavigationExt on GetInterface {
 
   Routing get routing => _getxController.routing;
 
-  set parameters(Map<String, String?> newParameters) =>
-      rootController.parameters = newParameters;
+  bool get _shouldUseMock => GetTestMode.active && !GetRoot.treeInitialized;
 
-  set testMode(bool isTest) => rootController.testMode = isTest;
+  /// give current arguments
+  dynamic get arguments {
+    return args();
+  }
 
-  bool get testMode => _getxController.testMode;
+  T args<T>() {
+    if (_shouldUseMock) {
+      return GetTestMode.arguments as T;
+    }
+    return rootController.rootDelegate.arguments<T>();
+  }
 
-  Map<String, String?> get parameters => rootController.rootDelegate.parameters;
+  // set parameters(Map<String, String?> newParameters) {
+  //   rootController.parameters = newParameters;
+  // }
+
+  // @Deprecated('Use GetTestMode.active=true instead')
+  set testMode(bool isTest) => GetTestMode.active = isTest;
+
+  // @Deprecated('Use GetTestMode.active instead')
+  bool get testMode => GetTestMode.active;
+
+  Map<String, String?> get parameters {
+    if (_shouldUseMock) {
+      return GetTestMode.parameters;
+    }
+
+    return rootController.rootDelegate.parameters;
+  }
 
   /// Casts the stored router delegate to a desired type
   TDelegate? delegate<TDelegate extends RouterDelegate<TPage>, TPage>() =>
