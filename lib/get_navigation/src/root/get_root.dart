@@ -56,7 +56,7 @@ class ConfigData {
   final ThemeMode? themeMode;
 
   /// 是否默认添加返回滑动手势
-  final bool defaultPopGesture;
+  final bool? defaultPopGesture;
   final bool defaultOpaqueRoute;
   final Duration defaultTransitionDuration;
   final Curve defaultTransitionCurve;
@@ -105,10 +105,9 @@ class ConfigData {
     this.defaultDialogTransitionCurve = Curves.easeOutQuad,
     this.defaultDialogTransitionDuration = const Duration(milliseconds: 300),
     this.parameters = const {},
+    required this.defaultPopGesture,
     Routing? routing,
-    bool? defaultPopGesture,
-  })  : defaultPopGesture = defaultPopGesture ?? GetPlatform.isIOS,
-        routing = routing ?? Routing();
+  }) : routing = routing ?? Routing();
 
   ConfigData copyWith({
     ValueChanged<Routing?>? routingCallback,
@@ -352,7 +351,7 @@ class GetRootState extends State<GetRoot> with WidgetsBindingObserver {
     // 将 GetRootState 绑定到全局
     GetRootState._controller = this;
     // 添加 WidgetsBinding 的监听
-    ambiguate(Engine.instance)!.addObserver(this);
+    Engine.instance.addObserver(this);
     // 初始化
     onInit();
     super.initState();
@@ -383,7 +382,7 @@ class GetRootState extends State<GetRoot> with WidgetsBindingObserver {
     // 将 GetRootState 从全局中移除
     _controller = null;
     // 移除 WidgetsBinding 的监听
-    ambiguate(Engine.instance)!.removeObserver(this);
+    Engine.instance.removeObserver(this);
   }
 
   @override

@@ -318,7 +318,10 @@ Cannot read the previousTitle for a route that has not yet been installed''',
     return (nextRoute is GetPageRouteTransitionMixin &&
             !nextRoute.fullscreenDialog &&
             nextRoute.showCupertinoParallax) ||
-        (nextRoute is CupertinoRouteTransitionMixin && !nextRoute.fullscreenDialog);
+        (nextRoute is CupertinoRouteTransitionMixin &&
+            !nextRoute.fullscreenDialog) ||
+        (nextRoute is CupertinoSheetRoute &&
+            !nextRoute.fullscreenDialog);
   }
 
   @override
@@ -332,7 +335,8 @@ Cannot read the previousTitle for a route that has not yet been installed''',
     super.didChangePrevious(previousRoute);
   }
 
-  static bool canSwipe(GetPageRoute route) => route.popGesture ?? Get.defaultPopGesture;
+  static bool canSwipe(GetPageRoute route) =>
+      route.popGesture ?? Get.defaultPopGesture ?? GetPlatform.isIOS;
 
   /// Returns a [CupertinoFullscreenDialogTransition] if [route] is a full
   /// screen dialog, otherwise a [CupertinoPageTransition] is returned.

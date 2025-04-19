@@ -231,6 +231,7 @@ class GetMaterialApp extends StatelessWidget {
         theme: theme,
         darkTheme: darkTheme,
         themeMode: themeMode,
+        defaultPopGesture: popGesture,
       ),
       // binds: [
       //   Bind.lazyPut<GetMaterialController>(
